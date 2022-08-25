@@ -1,5 +1,5 @@
-class Video {
-  const Video({
+class VideoModel {
+  const VideoModel({
     required this.id,
     required this.title,
     required this.url,
@@ -24,8 +24,8 @@ class Video {
     this.filePath,
   });
 
-  static Video fromMap(Map<String, dynamic> map) {
-    return Video(
+  static VideoModel fromMap(Map<String, dynamic> map) {
+    return VideoModel(
       id: map['id'],
       title: map['title'],
       url: map['url'],
@@ -73,7 +73,7 @@ class Video {
   final List<String> tags;
   final String? filePath;
 
-  Video copyWith({
+  VideoModel copyWith({
     String? id,
     String? title,
     String? url,
@@ -97,7 +97,7 @@ class Video {
     List<String>? tags,
     String? filePath,
   }) {
-    return Video(
+    return VideoModel(
       id: id ?? this.id,
       title: title ?? this.title,
       url: url ?? this.url,

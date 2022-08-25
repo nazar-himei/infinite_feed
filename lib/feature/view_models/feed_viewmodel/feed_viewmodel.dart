@@ -8,24 +8,35 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:stacked/stacked.dart';
 
+/// [FeedViewModel] Provide you ViewModel for work with video / auth data.
 class FeedViewModel extends FutureViewModel {
-  final _videos = <Video>[];
-  List<Video> get videos => _videos;
+  final _videos = <VideoModel>[];
 
-  RequestStatus _requestVideosStatus = RequestStatus.loading;
-  RequestStatus get requestVideosStatus => _requestVideosStatus;
+  /// List videos for API[fetchFeed]
+  List<VideoModel> get videos => _videos;
+
+  RequestStatus _requestStatus = RequestStatus.request;
+
+  /// Status for handle API
+  RequestStatus get requestStatus => _requestStatus;
 
   int _currentVideo = 0;
+
+  /// Get index the video in page builder.
   int get getCurrentVideo => _currentVideo;
 
   bool _isAuthUser = false;
+
+  /// Type for use authentication in the system
   bool get isAuthUser => _isAuthUser;
 
   late final Directory _temporaryDir;
 
-  bool get isLoadignState =>
-      _requestVideosStatus == RequestStatus.loading || _videos.isEmpty;
+  /// Provide some info about status request
+  bool get isLoadingState =>
+      _requestStatus == RequestStatus.request || _videos.isEmpty;
 
+  /// [isLastVideoInFeed] For show if it's last video in list
   bool isLastVideoInFeed(int currentIndex) {
     if (_videos.isEmpty) {
       return false;
@@ -33,6 +44,7 @@ class FeedViewModel extends FutureViewModel {
     return currentIndex == _videos.length - 1;
   }
 
+  /// Initial to fetch data from API(videos ,authentication user in system)
   Future<void> initial() async {
     _temporaryDir = await getTemporaryDirectory();
 
@@ -42,15 +54,28 @@ class FeedViewModel extends FutureViewModel {
     );
   }
 
-  /// Featch videos from API [FeedRepository.fetchVideos].
+  /// Check status user authentication from API [AuthRepository.checkAuth]
+  Future<void> checkAuth() async {
+    try {
+      final videoFeed = await AuthRepository.checkAuth();
+      final userAuth = videoFeed.message?.contains('ok') ?? false;
+      updateUserAuthStatus(statusAuth: userAuth);
+    } catch (_) {
+      updateUserAuthStatus(statusAuth: false);
+      updateRequestStatus(RequestStatus.failure);
+    }
+  }
+
+  /// Fetch videos from API [FeedRepository.fetchVideos].
   ///
   /// Method has updated video collection and set pagination for videos.
+  /// If something happened with load data from API request status will [RequestStatus.failure]
   Future<void> fetchFeed({
     bool cleanVideos = false,
     int currentIndexPagination = 0,
   }) async {
     try {
-      updateRequestStatus(RequestStatus.loading);
+      updateRequestStatus(RequestStatus.request);
 
       final videoFeed = await FeedRepository.fetchVideos();
       updateVideos(
@@ -61,17 +86,17 @@ class FeedViewModel extends FutureViewModel {
         currentIndexPagination,
         waitForFirst: cleanVideos,
       );
-      updateRequestStatus(RequestStatus.successful);
+      updateRequestStatus(RequestStatus.success);
     } catch (_) {
-      updateRequestStatus(RequestStatus.failled);
+      updateRequestStatus(RequestStatus.failure);
       rethrow;
     }
   }
 
   /// Pagination videos from API [FeedRepository.fetchVideos]
   ///
-  /// [currentIndex] current index in builder videos.
-  /// [waitForFirst] wait first element in list videos.
+  /// [currentIndex] Current index in builder videos.
+  /// [waitForFirst] Wait first element in list videos.
   void paginationVideo(
     int currentIndex, {
     bool waitForFirst = false,
@@ -91,18 +116,14 @@ class FeedViewModel extends FutureViewModel {
     Future.wait(filterForVideo);
 
     if (waitForFirst) {
-      updateRequestStatus(RequestStatus.loading);
+      updateRequestStatus(RequestStatus.request);
       await filterForVideo.first;
-      updateRequestStatus(RequestStatus.successful);
+      updateRequestStatus(RequestStatus.success);
     }
   }
 
-  /// review type file path is Empty, in collection videos [_videos]
-  bool isEmptyFilePathVideo(int currentIndex) =>
-      _videos[currentIndex].filePath == null;
-
-  /// This method returner list where [video.filePath] is empty.
-  List<Video> get filterForVideos {
+  /// This method return list where [video.filePath] is empty.
+  List<VideoModel> get filterForVideos {
     return _videos
         .where(
           (video) => video.filePath == null,
@@ -110,22 +131,12 @@ class FeedViewModel extends FutureViewModel {
         .toList();
   }
 
-  /// check status user authentication from API [AuthRepository.checkAuth]
-  Future<void> checkAuth() async {
-    try {
-      final videoFeed = await AuthRepository.checkAuth();
-      final userAuth = videoFeed.message?.contains('ok') ?? false;
-      updateUserAuthStatus(statusAuth: userAuth);
-    } catch (_) {
-      updateUserAuthStatus(statusAuth: false);
-    }
-  }
-
   /// Update video from repository.
+  ///
   /// [videos] type for add new videos to [_videos].
   /// [cleanVideos] clean all list videos.
   void updateVideos(
-    List<Video> videos, {
+    List<VideoModel> videos, {
     bool cleanVideos = false,
   }) {
     if (videos.isEmpty) {
@@ -142,8 +153,8 @@ class FeedViewModel extends FutureViewModel {
 
   /// Download video from the API [FeedRepository.downloadVideo]
   ///
-  /// [Video] more detail about vide and get url video for download video.
-  Future<void> downloadVideo(Video video) async {
+  /// [VideoModel] more detail about vide and get url video for download video.
+  Future<void> downloadVideo(VideoModel video) async {
     try {
       final downloadedVideo = await FeedRepository.downloadVideo(
         video: video,
@@ -159,7 +170,7 @@ class FeedViewModel extends FutureViewModel {
       );
       notifyListeners();
     } catch (_) {
-      updateRequestStatus(RequestStatus.failled);
+      updateRequestStatus(RequestStatus.failure);
     }
   }
 
@@ -167,7 +178,7 @@ class FeedViewModel extends FutureViewModel {
   ///
   /// [RequestStatus] can be state [loading, failed, successful].
   void updateRequestStatus(RequestStatus status) {
-    _requestVideosStatus = status;
+    _requestStatus = status;
     notifyListeners();
   }
 

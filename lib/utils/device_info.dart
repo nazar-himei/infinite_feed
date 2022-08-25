@@ -1,6 +1,6 @@
 import 'package:uuid/uuid.dart';
 
-/// [DeviceInfo] provide information about device.
+/// [DeviceInfo] provide deviceId
 class DeviceInfo {
   const DeviceInfo._();
 

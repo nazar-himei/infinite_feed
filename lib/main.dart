@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:infinite_feed/feature/screens/feed/feed_view.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -11,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'infinite_feed',
+      title: 'Infinite feed',
       debugShowCheckedModeBanner: false,
       home: FeedView(),
     );

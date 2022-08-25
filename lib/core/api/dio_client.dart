@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:infinite_feed/utils/device_info.dart';
 
-/// Dio client default settings for [Dio]
+/// Dio client provide you possibility to request API.
 class DioClient {
   static const _baseUrl = 'https://api.claps.ai/v1';
 
+  /// Default settings for Dio.
+  /// Options for dio, base url [_baseUrl], id Device [DeviceInfo.deviceId] for header.
   static final client = Dio(
     BaseOptions(
       baseUrl: _baseUrl,

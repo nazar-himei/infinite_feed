@@ -1,5 +1,6 @@
+/// [RequestStatus] Provide enum for handle server status
 enum RequestStatus {
-  loading,
-  successful,
-  failled,
+  request,
+  success,
+  failure,
 }

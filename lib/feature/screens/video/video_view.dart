@@ -6,70 +6,64 @@ import 'package:infinite_feed/feature/widgets/video_progress.dart';
 import 'package:stacked/stacked.dart';
 import 'package:video_player/video_player.dart';
 
-class VideoView extends StatefulWidget {
+/// [VideoView] For show user a Video
+class VideoView extends StatelessWidget {
   const VideoView({
     Key? key,
     required this.video,
   }) : super(key: key);
 
-  final Video video;
+  /// Video model provide detail about video.
+  final VideoModel video;
 
-  @override
-  State<VideoView> createState() => _VideoViewState();
-}
-
-class _VideoViewState extends State<VideoView> {
   @override
   Widget build(BuildContext context) {
-    return widget.video.filePath == null
-        ? const Loader()
-        : ViewModelBuilder<VideoViewModel>.reactive(
-            viewModelBuilder: () => VideoViewModel(
-              video: widget.video,
+    if (video.filePath == null) {
+      return const Loader();
+    }
+
+    return ViewModelBuilder<VideoViewModel>.reactive(
+      viewModelBuilder: () => VideoViewModel(
+        video: video,
+      ),
+      onModelReady: (viewModel) => viewModel.initialVideo(),
+      onDispose: (viewModel) => viewModel.closeVideo(),
+      builder: (context, viewModel, _) {
+        if (!viewModel.isInvalidVideo) {
+          return const Loader();
+        }
+
+        final controller = viewModel.playerController!;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              onTap: viewModel.handleOnTapVideo,
+              child: AspectRatio(
+                aspectRatio: controller.value.aspectRatio,
+                child: VideoPlayer(
+                  controller,
+                ),
+              ),
             ),
-            onModelReady: (viewModel) => viewModel.initialVideo(),
-            onDispose: (viewModel) => viewModel.disposeVideo(),
-            builder: (
-              context,
-              viewModel,
-              _,
-            ) {
-              if (!viewModel.isInvalidVideo) {
-                return const Loader();
-              }
-
-              final controller = viewModel.playerController!;
-
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  GestureDetector(
-                    onTap: viewModel.handleOnTapVideo,
-                    child: AspectRatio(
-                      aspectRatio:
-                          viewModel.playerController!.value.aspectRatio,
-                      child: VideoPlayer(
-                        viewModel.playerController!,
-                      ),
+            ValueListenableBuilder<VideoPlayerValue>(
+              valueListenable: controller,
+              builder: (_, value, __) {
+                return Container(
+                  width: double.maxFinite,
+                  alignment: Alignment.bottomCenter,
+                  child: VideoProgress(
+                    progressValue: viewModel.parseVideoProgress(
+                      value,
                     ),
                   ),
-                  ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: controller,
-                    builder: (_, value, __) {
-                      return Container(
-                        width: double.maxFinite,
-                        alignment: Alignment.bottomCenter,
-                        child: VideoProgress(
-                          value: viewModel.parseVideoProgress(
-                            value,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              );
-            },
-          );
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
